@@ -1,9 +1,7 @@
-
 """
-LiveKit Voice Agent - Quick Start
-==================================
-The simplest possible LiveKit voice agent to get you started.
-Requires only OpenAI and Deepgram API keys.
+LiveKit Voice Agent - Restaurant Booking (Tuned Baseline)
+========================================================
+Stable LiveKit-native agent.
 """
 
 from dotenv import load_dotenv
@@ -11,43 +9,107 @@ from livekit import agents
 from livekit.agents import Agent, AgentSession, RunContext
 from livekit.agents.llm import function_tool
 from livekit.plugins import openai, deepgram, silero
-from datetime import datetime
 import os
+import requests
+
 
 # Load environment variables
 load_dotenv(".env")
 
-class Assistant(Agent):
-    """Basic voice assistant with Airbnb booking capabilities."""
+
+class RestaurantBookingAgent(Agent):
+    """Voice assistant for restaurant table bookings."""
 
     def __init__(self):
         super().__init__(
-            instructions="""You are a helpful and friendly Airbnb voice assistant.
-            You can help users search for Airbnbs in different cities and book their stays.
-            Keep your responses concise and natural, as if having a conversation."""
-        )
-async def entrypoint(ctx: agents.JobContext):
-    """Entry point for the agent."""
+            instructions="""
+You are a polite and friendly restaurant booking voice assistant.
 
-    # Configure the voice pipeline with the essentials
+Your goal is to help users book a restaurant table.
+During the conversation, naturally collect:
+- number of guests
+- booking date
+- booking time
+- cuisine preference
+- any special requests
+
+Ask follow-up questions ONLY if some information is missing.
+When all details are collected, confirm the booking clearly.
+
+Speak concisely and naturally, like a phone conversation.
+"""
+        )
+    @function_tool
+    async def create_restaurant_booking(
+    self,
+        context: RunContext,
+        number_of_guests: int,
+        booking_date: str,
+        booking_time: str,
+        cuisine: str,
+        special_requests: str | None = None,
+    ) -> str:
+        """
+        Create a restaurant booking using backend API.
+        """
+
+        payload = {
+            "customerName": "Voice User",
+            "numberOfGuests": number_of_guests,
+            "bookingDate": booking_date,
+            "bookingTime": booking_time,
+            "cuisinePreference": cuisine,
+            "specialRequests": special_requests or "",
+        }
+
+        try:
+            response = requests.post(
+                "http://localhost:5000/api/bookings",
+                json=payload,
+                timeout=5,
+            )
+            response.raise_for_status()
+            data = response.json()
+        except Exception:
+            return "Sorry, there was a problem creating your booking. Please try again."
+
+        return (
+            f"Your table is confirmed! 🎉\n\n"
+            f"It's booked for {number_of_guests} guests on {booking_date} at {booking_time}.\n"
+            f"I've noted your preference for {cuisine} cuisine.\n\n"
+            f"{data.get('suggestionText')}\n\n"
+            f"Your booking ID is {data.get('bookingId')}.\n"
+            f"We look forward to welcoming you!"
+        )
+
+
+    async def on_enter(self):
+        """Called when the agent session starts."""
+        await self.session.generate_reply(
+            instructions="Greet the user and ask if they would like to book a restaurant table."
+        )
+
+
+async def entrypoint(ctx: agents.JobContext):
+    """LiveKit entrypoint."""
+
     session = AgentSession(
         stt=deepgram.STT(model="nova-2"),
-        llm=openai.LLM(model=os.getenv("LLM_CHOICE", "gpt-4.1-mini")),
+        llm=openai.LLM(
+            model=os.getenv("LLM_CHOICE", "gpt-4.1-mini"),
+            temperature=0.6,
+        ),
         tts=openai.TTS(voice="echo"),
         vad=silero.VAD.load(),
     )
 
-    # Start the session
     await session.start(
         room=ctx.room,
-        agent=Assistant()
-    )
-    
-    # Generate initial greeting
-    await session.generate_reply(
-        instructions="Greet the user warmly and ask how you can help."
+        agent=RestaurantBookingAgent(),
     )
 
+
 if __name__ == "__main__":
-    # Run the agent
-    agents.cli.run_app(agents.WorkerOptions(entrypoint_fnc=entrypoint))
+    agents.cli.run_app(
+        agents.WorkerOptions(entrypoint_fnc=entrypoint)
+    )
