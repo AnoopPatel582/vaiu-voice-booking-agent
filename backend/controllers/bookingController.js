@@ -2,20 +2,6 @@ const Booking = require("../models/booking.js");
 const { v4: uuidv4 } = require("uuid");
 const { getWeatherForDate } = require("../services/weatherService");
 
-// CREATE booking
-// exports.createBooking = async (req, res) => {
-//   try {
-//     const booking = new Booking({
-//       ...req.body,
-//       bookingId: `BKG-${uuidv4().slice(0, 8)}`,
-//     });
-
-//     await booking.save();
-//     res.status(201).json(booking);
-//   } catch (err) {
-//     res.status(400).json({ error: err.message });
-//   }
-// };
 exports.createBooking = async (req, res) => {
   try {
     const {
