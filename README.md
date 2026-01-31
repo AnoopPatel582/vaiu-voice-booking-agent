@@ -146,11 +146,11 @@ uv run python agent.py download-files
 - Run the Agent
   ```
   # Basic agent (minimal configuration)
-  uv run python livekit_basic_agent.py console
+  uv run python agent.py console
   # Development mode (connects to LiveKit - optional)
-  uv run python livekit_basic_agent.py dev
+  uv run python agent.py dev
   # Production mode
-  uv run python livekit_basic_agent.py start
+  uv run python agent.py start
   ```
 - Architecture
 
