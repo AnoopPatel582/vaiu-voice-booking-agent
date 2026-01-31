@@ -91,7 +91,7 @@ vaiu-voice-booking-agent/
 
 - 2️⃣ Clone the Repository
   ```
-  git clone https://github.com/your-username/vaiu-voice-booking-agent.git
+  git clone https://github.com/AnoopPatel582/vaiu-voice-booking-agent
   cd vaiu-voice-booking-agent
   ```
   
