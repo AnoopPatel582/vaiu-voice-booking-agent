@@ -5,7 +5,7 @@ function TranscriptPanel({ messages }) {
         border: "1px solid #ccc",
         padding: "10px",
         height: "250px",
-        overflowY: "auto",
+        overflowY: "auto",      
       }}
     >
       {messages.map((msg, index) => (
