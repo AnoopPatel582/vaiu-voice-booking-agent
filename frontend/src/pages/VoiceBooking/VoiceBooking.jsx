@@ -3,18 +3,17 @@ import TranscriptPanel from "./TranscriptPanel";
 import { useLiveKit } from "../../hooks/useLiveKit";
 
 function VoiceBooking() {
-
   const {
-  connect,
-  disconnect,
-  isConnected,
-  isListening,
-  messages,
-  error,
-} = useLiveKit();
+    connect,
+    disconnect,
+    isConnected,
+    isListening,
+    messages,
+    error,
+  } = useLiveKit();
 
   return (
-    <div style={{ maxWidth: "600px", margin: "40px auto" }}>
+    <section className="voice-booking-card">
       <h2>Voice Booking</h2>
 
       <Controls
@@ -24,10 +23,10 @@ function VoiceBooking() {
         isListening={isListening}
       />
 
-      {error && <p style={{ color: "red" }}>{error}</p>}
+      {error && <p className="error-text">{error}</p>}
 
       <TranscriptPanel messages={messages} />
-    </div>
+    </section>
   );
 }
 
