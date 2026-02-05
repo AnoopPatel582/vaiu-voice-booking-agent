@@ -33,6 +33,16 @@ The agent collects booking details via voice, fetches real weather data, suggest
     - Start booking button
     - Live conversation transcript
 
+
+## 🎥 Demo Videos
+
+### Demo 1 – Through Console
+▶️ [Watch Demo Video](https://github.com/AnoopPatel582/vaiu-voice-booking-agent/releases/download/v1.0-demo/console_agent_demo.mp4)
+
+### Demo 2 – Through Frontend
+▶️ [Watch Demo Video](https://github.com/AnoopPatel582/vaiu-voice-booking-agent/releases/download/v1.0-demo/frontend_agent_demo.mp4)
+
+
 ## Tech Stack
 
 **Frontend:** React (Vite), LiveKit Client SDK
@@ -91,7 +101,7 @@ vaiu-voice-booking-agent/
 
 - 2️⃣ Clone the Repository
   ```
-  git clone https://github.com/your-username/vaiu-voice-booking-agent.git
+  git clone https://github.com/AnoopPatel582/vaiu-voice-booking-agent
   cd vaiu-voice-booking-agent
   ```
   
