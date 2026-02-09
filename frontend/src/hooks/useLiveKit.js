@@ -28,50 +28,107 @@ export function useLiveKit() {
       const room = new Room();
       roomRef.current = room;
 
-      // 3️⃣ Subscribe to transcription events BEFORE connecting
-      room.on(RoomEvent.TranscriptionReceived, (segments) => {
+      // Basic room lifecycle hooks (no logging needed in production)
+      room.on(RoomEvent.Connected, () => {});
+      room.on(RoomEvent.Reconnecting, () => {});
+      room.on(RoomEvent.Reconnected, () => {});
+      room.on(RoomEvent.Disconnected, () => {});
+
+      // 3️⃣ Helper function to process transcription segments
+      const processTranscriptionSegment = (seg, speaker) => {
+        if (!seg.text) return;
+
         setMessages((prev) => {
           const updated = [...prev];
+          const last = updated[updated.length - 1];
 
-          segments.forEach((seg) => {
-            if (!seg.text) return;
+          // Use seg.final (not seg.isFinal) - this is the correct property name
+          const isFinal = seg.final === true;
 
-            const speaker =
-              seg.participant?.identity?.startsWith("frontend_user")
-                ? "user"
-                : "agent";
-
+          // Only update if:
+          // 1. There is a last message
+          // 2. It's from the same speaker
+          // 3. It's NOT final (once final, never update it again)
+          if (last && last.speaker === speaker && !last.isFinal) {
+            // Update the existing non-final message
+            updated[updated.length - 1] = {
+              ...last,
+              text: seg.text,
+              isFinal: isFinal,
+              timestamp: new Date().toLocaleTimeString(),
+            };
+          } else {
+            // Append a new message (different speaker, or last message is final, or no last message)
             updated.push({
               speaker,
               text: seg.text,
-              isFinal: seg.isFinal,
+              isFinal: isFinal,
               timestamp: new Date().toLocaleTimeString(),
             });
-          });
+          }
 
           return updated;
         });
-      });
+      };
 
+      // 4️⃣ Subscribe to transcription events at the room level
+      room.on(
+        RoomEvent.TranscriptionReceived,
+        (segments, participant /*, publication */) => {
+          const segmentsArray = Array.isArray(segments)
+            ? segments
+            : segments?.segments ||
+              segments?.transcriptionSegments ||
+              [];
 
-      // 4️⃣ Connect to LiveKit 
+          const local = room.localParticipant;
+
+          let isUser = false;
+          if (participant && local) {
+            if (
+              participant.identity &&
+              local.identity &&
+              participant.identity === local.identity
+            ) {
+              isUser = true;
+            } else if (
+              participant.sid &&
+              local.sid &&
+              participant.sid === local.sid
+            ) {
+              isUser = true;
+            } else if (
+              typeof participant.identity === "string" &&
+              participant.identity.startsWith("frontend_user")
+            ) {
+              isUser = true;
+            }
+          }
+
+          const speaker = isUser ? "user" : "agent";
+
+          segmentsArray.forEach((seg) => {
+            processTranscriptionSegment(seg, speaker);
+          });
+        }
+      );
+
+      // 5️⃣ Connect to LiveKit 
       await room.connect(serverUrl, participantToken);
-      console.log("CONNECTED");
+
+      // 6️⃣ Handle audio track subscriptions for playback
       room.on("trackSubscribed", (track, publication, participant) => {
         if (track.kind === "audio") {
-          console.log("🔊 Remote audio track from:", participant.identity);
-
+          // Set up audio playback
           const audioEl = document.createElement("audio");
           audioEl.srcObject = new MediaStream([track.mediaStreamTrack]);
           audioEl.autoplay = true;
           audioEl.playsInline = true;
-
           document.body.appendChild(audioEl);
         }
       });
-
-
-      // 5️⃣ Enable microphone
+      
+      // 7️⃣ Enable microphone
       await room.localParticipant.setMicrophoneEnabled(true);
 
       setIsConnected(true);
@@ -90,6 +147,7 @@ export function useLiveKit() {
 
     setIsConnected(false);
     setIsListening(false);
+    setMessages([]); // Clear messages on disconnect
   };
 
   return {
