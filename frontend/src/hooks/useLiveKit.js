@@ -14,9 +14,6 @@ export function useLiveKit() {
       setError(null);
 
       // 1️⃣ Fetch connection details from backend
-      // const res = await fetch("http://localhost:5000/api/livekit-token", {
-      //   method: "POST",
-      // });
       const res = await fetch(
         `${import.meta.env.VITE_BACKEND_URL}/api/livekit-token`,
         {
